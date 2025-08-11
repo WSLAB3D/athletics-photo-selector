@@ -5,3 +5,6 @@ mediapipe
 deepface
 matplotlib
 transformers
+torchvision
+Pillow
+python-dotenv

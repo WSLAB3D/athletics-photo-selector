@@ -1,6 +1,11 @@
 import os
 import cv2
 import numpy as np
+from PIL import Image
+
+def load_and_preprocess(path):
+    image = Image.open(path).convert("RGB")
+    return preprocess(image).unsqueeze(0)  # Shape: [1, 3, 224, 224]
 
 def get_image_paths(folder, extensions=(".jpg", ".jpeg", ".png")):
     """
