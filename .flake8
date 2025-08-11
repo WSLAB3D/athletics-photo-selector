@@ -8,6 +8,9 @@ exclude =
     app/images,
     app/web/static
 ignore = 
-    E203,  # Whitespace before ':'
-    W503,  # Line break before binary operator
-    F401,  # Imported but unused
+    E203,
+    # Whitespace before ':'
+    W503,
+    # Line break before binary operator
+    F401,  
+    # Imported but unused
