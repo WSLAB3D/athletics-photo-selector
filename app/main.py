@@ -1,23 +1,48 @@
-from models import detect_objects, estimate_pose, analyze_faces, score_image, clip_score
-import os, pandas as pd, shutil
+import os
+import shutil
+import torch
+from app.detect_objects import detect_objects
+from app.score_image import score_image
+from app.select_top_images import select_top_images
+from app.utils import load_image, get_image_paths
 
-image_dir = "images"
-output = []
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
 
-for img_file in os.listdir(image_dir):
-    img_path = os.path.join(image_dir, img_file)
-    tags = {"filename": img_file}
-    tags.update(detect_objects.detect_objects(img_path))
-    tags.update(estimate_pose.estimate_pose(img_path))
-    tags.update(analyze_faces.analyze_faces(img_path))
-    tags.update(clip_score.clip_score(img_path))
-    tags["score"] = score_image.score_image(tags)
-    output.append(tags)
+MODEL_PATH = os.getenv("MODEL_PATH", "models/default_model.pt")
+DEVICE = os.getenv("DEVICE", "cpu")
 
-df = pd.DataFrame(output)
-top_images = df.sort_values("score", ascending=False).groupby(["gender", "ethnicity"]).head(10)
-top_images.to_csv("../output/tagged_images.csv", index=False)
+# Load model with error handling
+try:
+    model = torch.load(MODEL_PATH, map_location=DEVICE)
+    model.eval()
+except Exception as e:
+    print(f"❌ Failed to load model from {MODEL_PATH}: {e}")
+    exit(1)
 
-# Copy top images to web/static for gallery
-for img in top_images["filename"]:
-    shutil.copy(f"images/{img}", f"web/static/{img}")
+# Get image paths
+image_dir = "app/images"
+image_paths = get_image_paths(image_dir)
+
+# Score and select images
+scored_images = []
+for image_path in image_paths:
+    try:
+        image = load_image(image_path)
+        score = score_image(image, model)
+        scored_images.append((image_path, score))
+    except Exception as e:
+        print(f"⚠️ Skipping {image_path}: {e}")
+
+# Select top images
+selected_images = select_top_images(scored_images, top_k=10)
+
+# Save to output folder
+os.makedirs("output", exist_ok=True)
+for img_path in selected_images:
+    try:
+        shutil.copy(img_path, "output/")
+        print(f"✅ Saved: {img_path}")
+    except Exception as e:
+        print(f"❌ Failed to save {img_path}: {e}")
