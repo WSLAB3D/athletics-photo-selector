@@ -1,8 +1,8 @@
 import os
 import pytest
 import numpy as np
-from app.score_image import score_image
-from app.select_top_images import select_top_images
+from app.models.score_image import score_image
+#from app.select_top_images import select_top_images
 from app.utils import get_image_paths, load_image
 
 def test_get_image_paths_returns_list():
