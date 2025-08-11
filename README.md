@@ -1,111 +1,76 @@
-# 🧠 AI App with CPU/GPU Docker Profiles
+# 🏃 Athletics Photo Selector
 
-This project is a containerized Python application designed to run seamlessly on both CPU and GPU environments. It uses Docker and `docker-compose` profiles to toggle between hardware configurations.
-
----
+An AI-powered pipeline for selecting high-quality sports photos using object detection and image scoring. Designed to streamline the workflow for photographers and media teams covering athletic events.
 
 ## 🚀 Features
-
-- ✅ Profile-based Docker builds for CPU and GPU
-- 🐍 Python environment with customizable dependencies
-- 🐳 Clean Dockerfile with build-time flexibility
-- ⚙️ GPU support via NVIDIA runtime
-- 📦 Optional `.env` file for runtime configuration
-
----
+- Detects key objects (e.g. athletes) in images
+- Scores images based on composition and clarity
+- Selects top images from a folder
+- Supports CPU and GPU via Docker profiles
+- Easily configurable via `.env` file
 
 ## 📁 Project Structure
-
 ```
 .
+├── app/
+│   ├── detect_objects.py
+│   ├── score_image.py
+│   ├── select_top_images.py
+│   └── images/                # Input images folder
+├── tests/
+│   └── test-main.py           # Unit tests
+├── main.py                    # Pipeline entry point
+├── .env                       # Environment variables
+├── .flake8                    # Linting config
+├── pytest.ini                 # Pytest config
+├── requirements.txt
 ├── Dockerfile
 ├── docker-compose.yml
-├── requirements.txt
-├── main.py
-├── .env
 └── README.md
 ```
 
----
+## ⚙️ Setup
 
-## 🐳 Docker Setup
-
-### 🔧 Build and Run with CPU
-
+### 1. Clone the repo
 ```bash
-docker compose --profile cpu up --build
+git clone https://github.com/WSLAB3D/athletics-photo-selector.git
+cd athletics-photo-selector
 ```
 
-This uses a lightweight Python base image (`python:3.10-slim`) and runs the app in a CPU-only environment.
+### 2. Add your model
+Place your PyTorch model file in the `models/` folder and update the path in `.env`:
 
----
-
-### ⚡ Build and Run with GPU
-
-```bash
-docker compose --profile gpu up --build
 ```
-
-This uses a PyTorch GPU-enabled image (`pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime`) and enables the NVIDIA runtime for GPU acceleration.
-
-> 🧠 Make sure you have the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed to use GPU containers.
-
----
-
-## ⚙️ Environment Configuration
-
-You can customize runtime behavior using a `.env` file:
-
-```env
 MODEL_PATH=models/default_model.pt
-DEVICE=auto
+DEVICE=cuda  # or 'cpu'
 ```
 
-In your Python code:
+### 3. Add images
+Drop your input images into `app/images/`.
 
-```python
-import os
+## 🐳 Run with Docker
 
-device = os.getenv("DEVICE", "cpu")
-model_path = os.getenv("MODEL_PATH", "models/default_model.pt")
-
-print(f"Running on device: {device}")
-print(f"Using model: {model_path}")
-```
-
----
-
-## 📦 Installing Dependencies
-
-Dependencies are managed via `requirements.txt`. To update:
-
+### CPU
 ```bash
-pip freeze > requirements.txt
+docker compose --profile cpu up
 ```
 
----
-
-## 🧪 GPU Detection (Optional)
-
-You can add this to `main.py` to auto-detect GPU availability:
-
-```python
-import torch
-
-if torch.cuda.is_available():
-    print(f"✅ GPU detected: {torch.cuda.get_device_name(0)}")
-else:
-    print("🚫 No GPU detected. Running on CPU.")
+### GPU
+```bash
+docker compose --profile gpu up
 ```
 
----
+## 🧪 Run Tests
+```bash
+pytest
+```
+Includes basic unit tests for pipeline components. Extend `tests/test-main.py` to cover edge cases and scoring logic.
+
+## 🧼 Linting
+```bash
+flake8
+```
+Configured via `.flake8` to ignore common formatting warnings and exclude irrelevant folders.
 
 ## 📜 License
-
-This project is licensed under the MIT License. See `LICENSE` for details.
-
----
-
-## 🙌 Contributing
-
-Feel free to fork, submit issues, or open pull requests. Contributions are welcome!
+MIT — feel free to use, modify, and contribute.
