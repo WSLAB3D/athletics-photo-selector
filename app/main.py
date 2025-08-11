@@ -1,48 +1,35 @@
 import os
-import shutil
 import torch
-from app.detect_objects import detect_objects
-from app.score_image import score_image
-from app.select_top_images import select_top_images
-from app.utils import load_image, get_image_paths
+from dotenv import load_dotenv
+from app.utils import get_image_paths, load_image
 
 # Load environment variables
-from dotenv import load_dotenv
 load_dotenv()
-
 MODEL_PATH = os.getenv("MODEL_PATH", "models/default_model.pt")
 DEVICE = os.getenv("DEVICE", "cpu")
 
-# Load model with error handling
-try:
-    model = torch.load(MODEL_PATH, map_location=DEVICE)
-    model.eval()
-except Exception as e:
-    print(f"❌ Failed to load model from {MODEL_PATH}: {e}")
-    exit(1)
+# Detect GPU
+if torch.cuda.is_available():
+    print(f"✅ GPU detected: {torch.cuda.get_device_name(0)}")
+else:
+    print("🚫 No GPU detected. Running on CPU.")
 
-# Get image paths
-image_dir = "app/images"
-image_paths = get_image_paths(image_dir)
+# Load model
+print(f"📦 Loading model from: {MODEL_PATH}")
+model = torch.load(MODEL_PATH, map_location=DEVICE)
+model.eval()
 
-# Score and select images
-scored_images = []
-for image_path in image_paths:
+# Load and preprocess images
+image_folder = "app/images"
+image_paths = get_image_paths(image_folder)
+print(f"🖼️ Found {len(image_paths)} images in {image_folder}")
+
+for path in image_paths:
     try:
-        image = load_image(image_path)
-        score = score_image(image, model)
-        scored_images.append((image_path, score))
+        img = load_image(path, target_size=(224, 224), normalize=True)
+        tensor = torch.tensor(img).permute(2, 0, 1).unsqueeze(0).to(DEVICE)  # Shape: [1, 3, H, W]
+        with torch.no_grad():
+            output = model(tensor)
+        print(f"✅ Inference for {os.path.basename(path)}: {output}")
     except Exception as e:
-        print(f"⚠️ Skipping {image_path}: {e}")
-
-# Select top images
-selected_images = select_top_images(scored_images, top_k=10)
-
-# Save to output folder
-os.makedirs("output", exist_ok=True)
-for img_path in selected_images:
-    try:
-        shutil.copy(img_path, "output/")
-        print(f"✅ Saved: {img_path}")
-    except Exception as e:
-        print(f"❌ Failed to save {img_path}: {e}")
+        print(f"❌ Error processing {path}: {e}")
