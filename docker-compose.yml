@@ -9,7 +9,7 @@ services:
         BASE_IMAGE: python:3.10-slim
     command: python main.py
     volumes:
-      - .:/app
+      - ./app:/app
     profiles:
       - cpu
 
@@ -21,7 +21,7 @@ services:
         BASE_IMAGE: pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime
     command: python main.py
     volumes:
-      - .:/app
+      - ./app:/app
     runtime: nvidia
     deploy:
       resources:
